@@ -1,225 +1,192 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
-import {
-    addOpdVisit,
-    getPatientOpdHistory
-} from "../services/opdService";
-
-import {
-    uploadPrescription,
-    getPrescriptionsByVisit
-} from "../services/prescriptionService";
 
 
 export default function PatientDetailsModal({
 
     patient,
+
     onClose
 
 }) {
 
-    const [history, setHistory] = useState([]);
+    // ==========================================
+    // EXISTING OPDS
+    // ==========================================
+    const [opdHistory, setOpdHistory] = useState(
+        patient.opd_visits || []
+    );
 
-    const [selectedFile, setSelectedFile] = useState(null);
 
-    const [prescriptions, setPrescriptions] = useState([]);
 
+    // ==========================================
+    // NEW OPD FORM
+    // ==========================================
     const [formData, setFormData] = useState({
 
-        doctor_name: "Rajesh",
         symptoms: "",
+
         diagnosis: "",
+
+        medicines: "",
+
         notes: "",
-        followup_date: ""
+
+        visit_date: new Date()
+            .toISOString()
+            .split("T")[0]
     });
 
 
 
-    // =====================================
-    // LOAD PRESCRIPTIONS
-    // =====================================
-    const loadPrescriptions = async (visitId) => {
+    const [prescriptionImage, setPrescriptionImage] =
+        useState(null);
 
-        try {
-
-            const response = await getPrescriptionsByVisit(visitId);
-
-            setPrescriptions((prev) => [
-
-                ...prev.filter(
-                    (img) => img.visit_id !== visitId
-                ),
-
-                ...response.data
-            ]);
-
-        } catch (error) {
-
-            console.log(error);
-        }
-    };
+    const [labReport, setLabReport] =
+        useState(null);
 
 
 
-    // =====================================
-    // LOAD OPD HISTORY
-    // =====================================
-    const loadHistory = async () => {
-
-        try {
-
-            const response = await getPatientOpdHistory(patient.id);
-
-            setHistory(response.data);
-
-            // LOAD PRESCRIPTIONS FOR EACH VISIT
-            response.data.forEach((visit) => {
-
-                loadPrescriptions(visit.id);
-            });
-
-        } catch (error) {
-
-            console.log(error);
-        }
-    };
-
-
-
-    useEffect(() => {
-
-        if (patient) {
-
-            loadHistory();
-        }
-
-    }, [patient]);
-
-
-
-    // =====================================
-    // HANDLE INPUT CHANGE
-    // =====================================
+    // ==========================================
+    // HANDLE INPUT
+    // ==========================================
     const handleChange = (e) => {
 
         setFormData({
 
             ...formData,
+
             [e.target.name]: e.target.value
         });
     };
 
 
 
-    // =====================================
-    // HANDLE SUBMIT
-    // =====================================
-    const handleSubmit = async (e) => {
+    // ==========================================
+    // PRESCRIPTION IMAGE
+    // ==========================================
+    const handlePrescriptionUpload = (e) => {
 
-        e.preventDefault();
+        const file = e.target.files[0];
 
-        try {
+        if (file) {
 
-            // SAVE OPD VISIT
-            const response = await addOpdVisit({
-
-                patient_id: patient.id,
-                ...formData
-            });
-
-            const latestVisitId = response.visit_id;
-
-
-            // UPLOAD PRESCRIPTION IMAGE
-            if (selectedFile) {
-
-                const formDataObj = new FormData();
-
-                formDataObj.append(
-                    "prescription",
-                    selectedFile
-                );
-
-                formDataObj.append(
-                    "patient_id",
-                    patient.id
-                );
-
-                formDataObj.append(
-                    "visit_id",
-                    latestVisitId
-                );
-
-                await uploadPrescription(formDataObj);
-            }
-
-
-            alert("OPD visit saved successfully");
-
-
-            // RESET FORM
-            setFormData({
-
-                doctor_name: "Rajesh",
-                symptoms: "",
-                diagnosis: "",
-                notes: "",
-                followup_date: ""
-            });
-
-            setSelectedFile(null);
-
-
-            // RELOAD HISTORY
-            loadHistory();
-
-        } catch (error) {
-
-            console.log(error);
-
-            alert("Error saving OPD visit");
+            setPrescriptionImage(
+                URL.createObjectURL(file)
+            );
         }
     };
 
 
 
-    if (!patient) return null;
+    // ==========================================
+    // LAB REPORT
+    // ==========================================
+    const handleLabReportUpload = (e) => {
+
+        const file = e.target.files[0];
+
+        if (file) {
+
+            setLabReport(
+                URL.createObjectURL(file)
+            );
+        }
+    };
+
+
+
+    // ==========================================
+    // SAVE NEW OPD
+    // ==========================================
+    const handleSave = () => {
+
+        const newOPD = {
+
+            id: Date.now(),
+
+            ...formData,
+
+            prescription_image:
+                prescriptionImage,
+
+            lab_report:
+                labReport
+        };
+
+
+
+        setOpdHistory([
+            newOPD,
+            ...opdHistory
+        ]);
+
+
+
+        alert(
+            "OPD Visit Saved Successfully"
+        );
+
+
+
+        // RESET FORM
+        setFormData({
+
+            symptoms: "",
+
+            diagnosis: "",
+
+            medicines: "",
+
+            notes: "",
+
+            visit_date: new Date()
+                .toISOString()
+                .split("T")[0]
+        });
+
+
+
+        setPrescriptionImage(null);
+
+        setLabReport(null);
+    };
 
 
 
     return (
 
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center p-4 z-50">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-auto">
 
-            <div className="bg-white rounded-xl w-full max-w-6xl p-6 overflow-auto max-h-[95vh]">
+            <div className="bg-white rounded-[32px] shadow-2xl w-full max-w-6xl overflow-hidden">
 
                 {/* HEADER */}
-                <div className="flex justify-between items-center mb-6">
+                <div className="bg-gradient-to-r from-blue-600 to-indigo-700 p-6 text-white flex justify-between items-center">
 
                     <div>
 
                         <h2 className="text-3xl font-bold">
-                            {patient.full_name}
+
+                            Patient OPD
+
                         </h2>
 
-                        <p className="text-gray-600">
-                            Mobile: {patient.mobile}
-                        </p>
 
-                        <p className="text-gray-600">
-                            Age: {patient.age}
-                        </p>
 
-                        <p className="text-gray-600">
-                            Gender: {patient.gender}
+                        <p className="opacity-90 mt-1 text-lg">
+
+                            {patient.first_name}{" "}
+                            {patient.last_name}
+
                         </p>
 
                     </div>
 
 
+
                     <button
                         onClick={onClose}
-                        className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg"
+                        className="bg-white/20 hover:bg-white/30 px-4 py-2 rounded-xl font-bold"
                     >
                         Close
                     </button>
@@ -228,256 +195,431 @@ export default function PatientDetailsModal({
 
 
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* BODY */}
+                <div className="p-8 space-y-10 max-h-[85vh] overflow-auto">
 
-                    {/* LEFT SIDE */}
-                    <div className="bg-gray-100 p-5 rounded-xl">
+                    {/* PATIENT INFO */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
 
-                        <h3 className="text-2xl font-bold mb-5">
-                            New OPD Visit
-                        </h3>
+                        <div className="bg-slate-50 rounded-2xl p-5 shadow-sm">
 
+                            <p className="text-slate-500 text-sm">
 
-                        <form
-                            onSubmit={handleSubmit}
-                            className="space-y-4"
-                        >
+                                Mobile
 
-                            {/* DOCTOR NAME */}
-                            <div>
+                            </p>
 
-                                <label className="block mb-1 font-medium">
-                                    Doctor Name
-                                </label>
+                            <p className="text-xl font-bold text-slate-700">
 
-                                <input
-                                    type="text"
-                                    name="doctor_name"
-                                    value={formData.doctor_name}
-                                    onChange={handleChange}
-                                    className="w-full border rounded-lg px-3 py-2"
-                                />
+                                {patient.mobile}
 
-                            </div>
+                            </p>
+
+                        </div>
 
 
 
-                            {/* SYMPTOMS */}
-                            <div>
+                        <div className="bg-slate-50 rounded-2xl p-5 shadow-sm">
 
-                                <label className="block mb-1 font-medium">
-                                    Symptoms
-                                </label>
+                            <p className="text-slate-500 text-sm">
 
-                                <textarea
-                                    name="symptoms"
-                                    value={formData.symptoms}
-                                    onChange={handleChange}
-                                    rows="3"
-                                    className="w-full border rounded-lg px-3 py-2"
-                                />
+                                Age
 
-                            </div>
+                            </p>
 
+                            <p className="text-xl font-bold text-slate-700">
 
+                                {patient.age}
 
-                            {/* DIAGNOSIS */}
-                            <div>
+                            </p>
 
-                                <label className="block mb-1 font-medium">
-                                    Diagnosis
-                                </label>
-
-                                <textarea
-                                    name="diagnosis"
-                                    value={formData.diagnosis}
-                                    onChange={handleChange}
-                                    rows="3"
-                                    className="w-full border rounded-lg px-3 py-2"
-                                />
-
-                            </div>
+                        </div>
 
 
 
-                            {/* NOTES */}
-                            <div>
+                        <div className="bg-slate-50 rounded-2xl p-5 shadow-sm">
 
-                                <label className="block mb-1 font-medium">
-                                    Notes
-                                </label>
+                            <p className="text-slate-500 text-sm">
 
-                                <textarea
-                                    name="notes"
-                                    value={formData.notes}
-                                    onChange={handleChange}
-                                    rows="3"
-                                    className="w-full border rounded-lg px-3 py-2"
-                                />
+                                Gender
 
-                            </div>
+                            </p>
 
+                            <p className="text-xl font-bold text-slate-700">
 
+                                {patient.gender}
 
-                            {/* FOLLOWUP DATE */}
-                            <div>
+                            </p>
 
-                                <label className="block mb-1 font-medium">
-                                    Follow-up Date
-                                </label>
-
-                                <input
-                                    type="date"
-                                    name="followup_date"
-                                    value={formData.followup_date}
-                                    onChange={handleChange}
-                                    className="w-full border rounded-lg px-3 py-2"
-                                />
-
-                            </div>
-
-
-
-                            {/* PRESCRIPTION IMAGE */}
-                            <div>
-
-                                <label className="block mb-1 font-medium">
-                                    Upload Prescription Image
-                                </label>
-
-                                <input
-                                    type="file"
-                                    accept="image/*"
-                                    onChange={(e) =>
-                                        setSelectedFile(
-                                            e.target.files[0]
-                                        )
-                                    }
-                                    className="w-full border rounded-lg px-3 py-2 bg-white"
-                                />
-
-                            </div>
-
-
-
-                            {/* SAVE BUTTON */}
-                            <button
-                                type="submit"
-                                className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg"
-                            >
-                                Save OPD Visit
-                            </button>
-
-                        </form>
+                        </div>
 
                     </div>
 
 
 
-                    {/* RIGHT SIDE */}
-                    <div className="bg-gray-100 p-5 rounded-xl">
+                    {/* ========================================= */}
+                    {/* PREVIOUS OPD HISTORY */}
+                    {/* ========================================= */}
+                    <div>
 
-                        <h3 className="text-2xl font-bold mb-5">
-                            OPD History
+                        <h3 className="text-3xl font-bold text-slate-700 mb-6">
+
+                            Previous OPD Visits
+
                         </h3>
 
 
-                        <div className="space-y-5">
 
-                            {
-                                history.length === 0 && (
+                        {
+                            opdHistory.length === 0 ? (
 
-                                    <div className="bg-white p-4 rounded-lg shadow">
+                                <div className="bg-slate-100 rounded-3xl p-8 text-center text-slate-500 text-lg">
 
-                                        No OPD history found
+                                    No Previous OPDs Found
 
-                                    </div>
-                                )
-                            }
+                                </div>
 
+                            ) : (
 
+                                <div className="space-y-6">
 
-                            {
-                                history.map((visit) => (
+                                    {
+                                        opdHistory.map((opd) => (
 
-                                    <div
-                                        key={visit.id}
-                                        className="bg-white p-4 rounded-lg shadow"
-                                    >
+                                            <div
+                                                key={opd.id}
+                                                className="bg-white border border-slate-200 rounded-3xl shadow-lg p-6"
+                                            >
 
-                                        <div className="mb-3">
+                                                {/* DATE */}
+                                                <div className="flex justify-between items-center mb-4">
 
-                                            <p>
-                                                <strong>Visit Date:</strong>{" "}
-                                                {visit.visit_date}
-                                            </p>
+                                                    <h4 className="text-2xl font-bold text-indigo-700">
 
-                                            <p>
-                                                <strong>Doctor:</strong>{" "}
-                                                {visit.doctor_name}
-                                            </p>
+                                                        Visit Date:
+                                                        {" "}
+                                                        {opd.visit_date}
 
-                                        </div>
+                                                    </h4>
+
+                                                </div>
 
 
 
-                                        <div className="space-y-2">
+                                                {/* DETAILS */}
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
 
-                                            <p>
-                                                <strong>Symptoms:</strong>{" "}
-                                                {visit.symptoms}
-                                            </p>
+                                                    <div className="bg-slate-50 rounded-2xl p-4">
 
-                                            <p>
-                                                <strong>Diagnosis:</strong>{" "}
-                                                {visit.diagnosis}
-                                            </p>
+                                                        <p className="font-semibold text-slate-500 mb-2">
 
-                                            <p>
-                                                <strong>Notes:</strong>{" "}
-                                                {visit.notes}
-                                            </p>
+                                                            Symptoms
 
-                                            <p>
-                                                <strong>Follow-up:</strong>{" "}
-                                                {visit.followup_date || "N/A"}
-                                            </p>
+                                                        </p>
 
-                                        </div>
+                                                        <p className="text-slate-700">
+
+                                                            {opd.symptoms}
+
+                                                        </p>
+
+                                                    </div>
 
 
 
-                                        {/* PRESCRIPTION IMAGES */}
-                                        <div className="mt-4 flex flex-wrap gap-3">
+                                                    <div className="bg-slate-50 rounded-2xl p-4">
 
-                                            {
-                                                prescriptions
-                                                    .filter(
-                                                        (img) =>
-                                                            img.visit_id === visit.id
+                                                        <p className="font-semibold text-slate-500 mb-2">
+
+                                                            Diagnosis
+
+                                                        </p>
+
+                                                        <p className="text-slate-700">
+
+                                                            {opd.diagnosis}
+
+                                                        </p>
+
+                                                    </div>
+
+
+
+                                                    <div className="bg-slate-50 rounded-2xl p-4">
+
+                                                        <p className="font-semibold text-slate-500 mb-2">
+
+                                                            Medicines
+
+                                                        </p>
+
+                                                        <p className="text-slate-700">
+
+                                                            {opd.medicines}
+
+                                                        </p>
+
+                                                    </div>
+
+
+
+                                                    <div className="bg-slate-50 rounded-2xl p-4">
+
+                                                        <p className="font-semibold text-slate-500 mb-2">
+
+                                                            Notes
+
+                                                        </p>
+
+                                                        <p className="text-slate-700">
+
+                                                            {opd.notes}
+
+                                                        </p>
+
+                                                    </div>
+
+                                                </div>
+
+
+
+                                                {/* PRESCRIPTION IMAGE */}
+                                                {
+                                                    opd.prescription_image && (
+
+                                                        <div className="mt-6">
+
+                                                            <h5 className="text-lg font-bold text-slate-700 mb-3">
+
+                                                                Prescription
+
+                                                            </h5>
+
+                                                            <img
+                                                                src={
+                                                                    opd.prescription_image
+                                                                }
+                                                                alt="Prescription"
+                                                                className="rounded-2xl border border-slate-200 max-h-[400px]"
+                                                            />
+
+                                                        </div>
                                                     )
-                                                    .map((img) => (
+                                                }
 
-                                                        <img
-                                                            key={img.id}
-                                                            src={`http://localhost:5000/${img.image_path}`}
-                                                            alt="Prescription"
-                                                            className="w-40 h-40 object-cover rounded-lg border cursor-pointer hover:scale-105 transition"
-                                                            onClick={() =>
-                                                                window.open(
-                                                                    `http://localhost:5000/${img.image_path}`,
-                                                                    "_blank"
-                                                                )
-                                                            }
-                                                        />
-                                                    ))
-                                            }
 
-                                        </div>
+
+                                                {/* LAB REPORT */}
+                                                {
+                                                    opd.lab_report && (
+
+                                                        <div className="mt-6">
+
+                                                            <h5 className="text-lg font-bold text-slate-700 mb-3">
+
+                                                                Lab Report
+
+                                                            </h5>
+
+                                                            <img
+                                                                src={
+                                                                    opd.lab_report
+                                                                }
+                                                                alt="Lab Report"
+                                                                className="rounded-2xl border border-slate-200 max-h-[400px]"
+                                                            />
+
+                                                        </div>
+                                                    )
+                                                }
+
+                                            </div>
+                                        ))
+                                    }
+
+                                </div>
+                            )
+                        }
+
+                    </div>
+
+
+
+                    {/* ========================================= */}
+                    {/* NEW OPD FORM */}
+                    {/* ========================================= */}
+                    <div className="bg-slate-50 rounded-3xl p-8 border border-slate-200">
+
+                        <h3 className="text-3xl font-bold text-slate-700 mb-6">
+
+                            Add New OPD Visit
+
+                        </h3>
+
+
+
+                        {/* DATE */}
+                        <div className="mb-6">
+
+                            <label className="block mb-2 font-semibold text-slate-700">
+
+                                Visit Date
+
+                            </label>
+
+                            <input
+                                type="date"
+                                name="visit_date"
+                                value={formData.visit_date}
+                                onChange={handleChange}
+                                className="w-full border border-slate-300 rounded-2xl px-4 py-3 outline-none focus:ring-4 focus:ring-blue-300"
+                            />
+
+                        </div>
+
+
+
+                        {/* TEXTAREAS */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+                            {
+                                [
+                                    ["symptoms", "Symptoms"],
+                                    ["diagnosis", "Diagnosis"],
+                                    ["medicines", "Medicines"],
+                                    ["notes", "Additional Notes"]
+                                ].map(([name, label]) => (
+
+                                    <div key={name}>
+
+                                        <label className="block mb-2 font-semibold text-slate-700">
+
+                                            {label}
+
+                                        </label>
+
+                                        <textarea
+                                            name={name}
+                                            value={formData[name]}
+                                            onChange={handleChange}
+                                            rows={4}
+                                            className="w-full border border-slate-300 rounded-2xl px-4 py-3 outline-none focus:ring-4 focus:ring-blue-300"
+                                        />
 
                                     </div>
                                 ))
                             }
+
+                        </div>
+
+
+
+                        {/* IMAGE UPLOADS */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
+
+                            {/* PRESCRIPTION */}
+                            <div className="bg-blue-50 border border-blue-100 rounded-3xl p-6">
+
+                                <div className="flex justify-between items-center mb-4">
+
+                                    <h4 className="text-xl font-bold text-slate-700">
+
+                                        Prescription
+
+                                    </h4>
+
+
+
+                                    <label className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white px-5 py-3 rounded-2xl font-bold shadow-lg cursor-pointer">
+
+                                        Upload
+
+                                        <input
+                                            type="file"
+                                            className="hidden"
+                                            onChange={
+                                                handlePrescriptionUpload
+                                            }
+                                        />
+
+                                    </label>
+
+                                </div>
+
+
+
+                                {
+                                    prescriptionImage && (
+
+                                        <img
+                                            src={prescriptionImage}
+                                            alt="Prescription"
+                                            className="rounded-2xl border border-slate-200 max-h-[300px]"
+                                        />
+                                    )
+                                }
+
+                            </div>
+
+
+
+                            {/* LAB REPORT */}
+                            <div className="bg-purple-50 border border-purple-100 rounded-3xl p-6">
+
+                                <div className="flex justify-between items-center mb-4">
+
+                                    <h4 className="text-xl font-bold text-slate-700">
+
+                                        Lab Report
+
+                                    </h4>
+
+
+
+                                    <label className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-5 py-3 rounded-2xl font-bold shadow-lg cursor-pointer">
+
+                                        Upload
+
+                                        <input
+                                            type="file"
+                                            className="hidden"
+                                            onChange={
+                                                handleLabReportUpload
+                                            }
+                                        />
+
+                                    </label>
+
+                                </div>
+
+
+
+                                {
+                                    labReport && (
+
+                                        <img
+                                            src={labReport}
+                                            alt="Lab Report"
+                                            className="rounded-2xl border border-slate-200 max-h-[300px]"
+                                        />
+                                    )
+                                }
+
+                            </div>
+
+                        </div>
+
+
+
+                        {/* SAVE */}
+                        <div className="flex justify-end mt-8">
+
+                            <button
+                                onClick={handleSave}
+                                className="bg-gradient-to-r from-emerald-500 to-green-600 text-white px-10 py-4 rounded-2xl text-lg font-bold shadow-xl hover:scale-105 transition-all duration-300"
+                            >
+                                Save OPD Visit
+                            </button>
 
                         </div>
 

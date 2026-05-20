@@ -1,56 +1,324 @@
 const db = require("../database/db");
 
 
+
 // =====================================
-// ADD NEW PATIENT
+// ADD PATIENT
 // =====================================
 const addPatient = (req, res) => {
 
     const {
-        full_name,
+
+        first_name,
+        last_name,
         mobile,
         age,
         gender,
-        address
+        address,
+        treatment_start_date,
+        treatment_end_date
+
     } = req.body;
 
-    // Validation
-    if (!full_name) {
-        return res.status(400).json({
-            success: false,
-            message: "Full name is required"
-        });
-    }
 
-    const sql = `
-        INSERT INTO patients (
-            full_name,
-            mobile,
-            age,
-            gender,
-            address
-        )
-        VALUES (?, ?, ?, ?, ?)
+
+    const treatment_status =
+        treatment_end_date
+            ? "COMPLETED"
+            : "UNDER_TREATMENT";
+
+
+
+    const duplicateSql = `
+        SELECT *
+        FROM patients
+        WHERE
+
+            LOWER(first_name)=LOWER(?)
+
+            AND
+
+            LOWER(last_name)=LOWER(?)
+
+            AND
+
+            mobile=?
     `;
 
-    db.run(
-        sql,
-        [full_name, mobile, age, gender, address],
-        function(err) {
 
-            if (err) {
-                console.log(err.message);
 
-                return res.status(500).json({
+    db.get(
+        duplicateSql,
+        [
+            first_name,
+            last_name,
+            mobile
+        ],
+        (err, existingPatient) => {
+
+            if (existingPatient) {
+
+                return res.status(409).json({
+
                     success: false,
-                    message: "Database error"
+
+                    alreadyExists: true,
+
+                    patient: existingPatient
                 });
             }
 
-            res.status(201).json({
+
+
+            const sql = `
+                INSERT INTO patients (
+
+                    first_name,
+                    last_name,
+                    mobile,
+                    age,
+                    gender,
+                    address,
+                    treatment_start_date,
+                    treatment_end_date,
+                    treatment_status
+
+                )
+
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            `;
+
+
+
+            db.run(
+                sql,
+                [
+
+                    first_name,
+                    last_name,
+                    mobile,
+                    age,
+                    gender,
+                    address,
+                    treatment_start_date,
+                    treatment_end_date,
+                    treatment_status
+
+                ],
+                function(err) {
+
+                    if (err) {
+
+                        return res.status(500).json({
+
+                            success: false,
+
+                            message: err.message
+                        });
+                    }
+
+
+
+                    res.json({
+
+                        success: true,
+
+                        patient_id: this.lastID
+                    });
+                }
+            );
+        }
+    );
+};
+
+
+
+
+// =====================================
+// UPDATE PATIENT
+// =====================================
+const updatePatient = (req, res) => {
+
+    const patientId = req.params.id;
+
+    const {
+
+        first_name,
+        last_name,
+        mobile,
+        age,
+        gender,
+        address,
+        treatment_start_date,
+        treatment_end_date
+
+    } = req.body;
+
+
+
+    const treatment_status =
+        treatment_end_date
+            ? "COMPLETED"
+            : "UNDER_TREATMENT";
+
+
+
+    const duplicateSql = `
+        SELECT *
+        FROM patients
+        WHERE
+
+            LOWER(first_name)=LOWER(?)
+
+            AND
+
+            LOWER(last_name)=LOWER(?)
+
+            AND
+
+            mobile=?
+
+            AND
+
+            id != ?
+    `;
+
+
+
+    db.get(
+        duplicateSql,
+        [
+            first_name,
+            last_name,
+            mobile,
+            patientId
+        ],
+        (err, existingPatient) => {
+
+            if (existingPatient) {
+
+                return res.status(409).json({
+
+                    success: false,
+
+                    alreadyExists: true
+                });
+            }
+
+
+
+            const sql = `
+                UPDATE patients
+                SET
+
+                    first_name=?,
+                    last_name=?,
+                    mobile=?,
+                    age=?,
+                    gender=?,
+                    address=?,
+                    treatment_start_date=?,
+                    treatment_end_date=?,
+                    treatment_status=?
+
+                WHERE id=?
+            `;
+
+
+
+            db.run(
+                sql,
+                [
+
+                    first_name,
+                    last_name,
+                    mobile,
+                    age,
+                    gender,
+                    address,
+                    treatment_start_date,
+                    treatment_end_date,
+                    treatment_status,
+                    patientId
+
+                ],
+                function(err) {
+
+                    if (err) {
+
+                        return res.status(500).json({
+
+                            success: false,
+
+                            message: err.message
+                        });
+                    }
+
+
+
+                    res.json({
+
+                        success: true
+                    });
+                }
+            );
+        }
+    );
+};
+
+
+
+
+// =====================================
+// SEARCH PATIENTS
+// =====================================
+const searchPatients = (req, res) => {
+
+    const query =
+        req.query.query.toLowerCase();
+
+
+
+    const sql = `
+        SELECT *
+        FROM patients
+        WHERE
+
+            LOWER(first_name || ' ' || last_name)
+            LIKE ?
+
+            OR
+
+            mobile LIKE ?
+
+        ORDER BY id DESC
+    `;
+
+
+
+    db.all(
+        sql,
+        [
+            `%${query}%`,
+            `%${query}%`
+        ],
+        (err, rows) => {
+
+            if (err) {
+
+                return res.status(500).json({
+
+                    success: false
+                });
+            }
+
+
+
+            res.json({
+
                 success: true,
-                message: "Patient added successfully",
-                patient_id: this.lastID
+
+                data: rows
             });
         }
     );
@@ -60,121 +328,71 @@ const addPatient = (req, res) => {
 
 
 // =====================================
-// GET ALL PATIENTS
+// ANALYSIS FILTERS
 // =====================================
-const getAllPatients = (req, res) => {
+const getPatientsByStatus = (req, res) => {
 
-    const sql = `
-        SELECT *
-        FROM patients
-        ORDER BY id DESC
-    `;
+    const status = req.params.status;
 
-    db.all(sql, [], (err, rows) => {
+    let sql = "";
 
-        if (err) {
-            console.log(err.message);
 
-            return res.status(500).json({
-                success: false,
-                message: "Database error"
+    if (status === "ALL") {
+
+        sql = `
+            SELECT *
+            FROM patients
+            ORDER BY id DESC
+        `;
+
+    } else {
+
+        sql = `
+            SELECT *
+            FROM patients
+            WHERE treatment_status=?
+            ORDER BY id DESC
+        `;
+    }
+
+
+
+    db.all(
+        sql,
+        status === "ALL"
+            ? []
+            : [status],
+        (err, rows) => {
+
+            if (err) {
+
+                return res.status(500).json({
+
+                    success: false
+                });
+            }
+
+
+
+            res.json({
+
+                success: true,
+
+                data: rows
             });
         }
-
-        res.json({
-            success: true,
-            data: rows
-        });
-    });
+    );
 };
-
-
-
-
-// =====================================
-// GET SINGLE PATIENT
-// =====================================
-const getPatientById = (req, res) => {
-
-    const patientId = req.params.id;
-
-    const sql = `
-        SELECT *
-        FROM patients
-        WHERE id = ?
-    `;
-
-    db.get(sql, [patientId], (err, row) => {
-
-        if (err) {
-            console.log(err.message);
-
-            return res.status(500).json({
-                success: false,
-                message: "Database error"
-            });
-        }
-
-        if (!row) {
-            return res.status(404).json({
-                success: false,
-                message: "Patient not found"
-            });
-        }
-
-        res.json({
-            success: true,
-            data: row
-        });
-    });
-};
-
-
-
-
-// =====================================
-// DELETE PATIENT
-// =====================================
-const deletePatient = (req, res) => {
-
-    const patientId = req.params.id;
-
-    const sql = `
-        DELETE FROM patients
-        WHERE id = ?
-    `;
-
-    db.run(sql, [patientId], function(err) {
-
-        if (err) {
-            console.log(err.message);
-
-            return res.status(500).json({
-                success: false,
-                message: "Database error"
-            });
-        }
-
-        if (this.changes === 0) {
-            return res.status(404).json({
-                success: false,
-                message: "Patient not found"
-            });
-        }
-
-        res.json({
-            success: true,
-            message: "Patient deleted successfully"
-        });
-    });
-};
-
 
 
 
 module.exports = {
+
     addPatient,
-    getAllPatients,
-    getPatientById,
-    deletePatient
+
+    updatePatient,
+
+    searchPatients,
+
+    getPatientsByStatus
 };

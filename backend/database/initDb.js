@@ -1,114 +1,103 @@
-const db = require("./db");
+const sqlite3 = require("sqlite3").verbose();
 
-// =========================
+const path = require("path");
+
+const dbPath = path.join(__dirname, "clinic-data.db");
+
+const db = new sqlite3.Database(dbPath, (err) => {
+
+    if (err) {
+
+        console.log(err.message);
+
+    } else {
+
+        console.log("Connected to SQLite DB");
+    }
+});
+
+
+
+// =====================================
 // PATIENTS TABLE
-// =========================
+// =====================================
 db.run(`
 CREATE TABLE IF NOT EXISTS patients (
+
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    full_name TEXT NOT NULL,
-    mobile TEXT,
+
+    first_name TEXT NOT NULL,
+
+    last_name TEXT NOT NULL,
+
+    mobile TEXT NOT NULL,
+
     age INTEGER,
+
     gender TEXT,
+
     address TEXT,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+
+    treatment_start_date TEXT,
+
+    treatment_end_date TEXT,
+
+    treatment_status TEXT DEFAULT 'UNDER_TREATMENT',
+
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+
+    UNIQUE(first_name, last_name, mobile)
 )
-`, (err) => {
-    if (err) {
-        console.log("Error creating patients table", err.message);
-    } else {
-        console.log("Patients table ready");
-    }
-});
+`);
 
 
-// =========================
+
+
+// =====================================
 // OPD VISITS TABLE
-// =========================
+// =====================================
 db.run(`
 CREATE TABLE IF NOT EXISTS opd_visits (
+
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+
     patient_id INTEGER NOT NULL,
+
     doctor_name TEXT,
+
     symptoms TEXT,
+
     diagnosis TEXT,
+
     notes TEXT,
+
     followup_date TEXT,
-    visit_date DATETIME DEFAULT CURRENT_TIMESTAMP,
 
-    FOREIGN KEY(patient_id) REFERENCES patients(id)
+    visit_date DATETIME DEFAULT CURRENT_TIMESTAMP
 )
-`, (err) => {
-    if (err) {
-        console.log("Error creating opd_visits table", err.message);
-    } else {
-        console.log("OPD visits table ready");
-    }
-});
+`);
 
 
-// =========================
+
+
+// =====================================
 // PRESCRIPTION IMAGES TABLE
-// =========================
+// =====================================
 db.run(`
 CREATE TABLE IF NOT EXISTS prescription_images (
+
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    patient_id INTEGER NOT NULL,
-    visit_id INTEGER,
-    image_path TEXT NOT NULL,
-    uploaded_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 
-    FOREIGN KEY(patient_id) REFERENCES patients(id),
-    FOREIGN KEY(visit_id) REFERENCES opd_visits(id)
-)
-`, (err) => {
-    if (err) {
-        console.log("Error creating prescription_images table", err.message);
-    } else {
-        console.log("Prescription images table ready");
-    }
-});
-
-
-// =========================
-// MEDICINES TABLE
-// =========================
-db.run(`
-CREATE TABLE IF NOT EXISTS medicines (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    medicine_name TEXT NOT NULL,
-    stock_quantity INTEGER DEFAULT 0,
-    price REAL DEFAULT 0,
-    expiry_date TEXT,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-)
-`, (err) => {
-    if (err) {
-        console.log("Error creating medicines table", err.message);
-    } else {
-        console.log("Medicines table ready");
-    }
-});
-
-
-// =========================
-// MEDICINE TRANSACTIONS TABLE
-// =========================
-db.run(`
-CREATE TABLE IF NOT EXISTS medicine_transactions (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
     patient_id INTEGER,
-    medicine_id INTEGER,
-    quantity_given INTEGER,
-    transaction_date DATETIME DEFAULT CURRENT_TIMESTAMP,
 
-    FOREIGN KEY(patient_id) REFERENCES patients(id),
-    FOREIGN KEY(medicine_id) REFERENCES medicines(id)
+    visit_id INTEGER,
+
+    image_path TEXT,
+
+    uploaded_at DATETIME DEFAULT CURRENT_TIMESTAMP
 )
-`, (err) => {
-    if (err) {
-        console.log("Error creating medicine_transactions table", err.message);
-    } else {
-        console.log("Medicine transactions table ready");
-    }
-});
+`);
+
+
+
+module.exports = db;
