@@ -25,7 +25,8 @@ export default function PatientDetailsModal({
         diagnosis: "",
         medicines: "",
         notes: "",
-        visit_date: new Date().toISOString().split("T")[0]
+        visit_date: new Date().toISOString().split("T")[0],
+        followup_date: ""
     });
     const [prescriptionFiles, setPrescriptionFiles] = useState([]);
     const [prescriptionPreviews, setPrescriptionPreviews] = useState([]);
@@ -201,6 +202,7 @@ export default function PatientDetailsModal({
                 notes: formData.notes,
                 medicines: formData.medicines,
                 visit_date: formData.visit_date,
+                followup_date: formData.followup_date
             });
 
             if (response.success) {
@@ -239,7 +241,8 @@ export default function PatientDetailsModal({
                     diagnosis: "",
                     medicines: "",
                     notes: "",
-                    visit_date: new Date().toISOString().split("T")[0]
+                    visit_date: new Date().toISOString().split("T")[0],
+                    followup_date: ""
                 });
                 setPrescriptionFiles([]);
                 setPrescriptionPreviews([]);
@@ -295,6 +298,10 @@ export default function PatientDetailsModal({
 
                 <div className="grid gap-6 lg:grid-cols-[320px_1fr] p-6 md:p-7 max-h-[calc(100vh-18rem)] overflow-y-auto">
                     <aside className="space-y-5 rounded-3xl border border-slate-200 bg-slate-50 p-5 shadow-sm">
+                        <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+                            <p className="text-sm text-slate-500">Patient ID</p>
+                            <p className="mt-2 text-lg font-semibold text-slate-800">{patient.id}</p>
+                        </div>
                         <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
                             <p className="text-sm text-slate-500">Contact</p>
                             <p className="mt-2 text-lg font-semibold text-slate-800">{patient.mobile}</p>
@@ -385,6 +392,10 @@ export default function PatientDetailsModal({
                                                         <div className="rounded-3xl bg-white p-4 border border-slate-200 shadow-sm">
                                                             <p className="text-sm text-slate-500">Medicines</p>
                                                             <p className="mt-2 text-slate-700">{opd.medicines || "None"}</p>
+                                                        </div>
+                                                        <div className="rounded-3xl bg-white p-4 border border-slate-200 shadow-sm">
+                                                            <p className="text-sm text-slate-500">Next Follow-up</p>
+                                                            <p className="mt-2 text-slate-700">{opd.followup_date || "Not scheduled"}</p>
                                                         </div>
                                                         <div className="rounded-3xl bg-white p-4 border border-slate-200 shadow-sm">
                                                             <p className="text-sm text-slate-500">Notes</p>
@@ -509,6 +520,16 @@ export default function PatientDetailsModal({
                                                 type="date"
                                                 name="visit_date"
                                                 value={formData.visit_date}
+                                                onChange={handleChange}
+                                                className="w-full rounded-3xl border border-slate-300 bg-slate-50 px-4 py-3 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+                                            />
+                                        </div>
+                                        <div className="mb-5">
+                                            <label className="block text-sm font-semibold text-slate-700 mb-2">Next Follow-up Date</label>
+                                            <input
+                                                type="date"
+                                                name="followup_date"
+                                                value={formData.followup_date}
                                                 onChange={handleChange}
                                                 className="w-full rounded-3xl border border-slate-300 bg-slate-50 px-4 py-3 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
                                             />

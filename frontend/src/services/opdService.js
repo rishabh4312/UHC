@@ -19,3 +19,12 @@ export const getPatientOpdHistory = async (patientId) => {
 
     return response.data;
 };
+
+
+// GET UPCOMING FOLLOW-UP APPOINTMENTS
+export const getUpcomingAppointments = async () => {
+
+    const response = await axios.get(`${API_URL}/upcoming`);
+
+    return response.data;
+};

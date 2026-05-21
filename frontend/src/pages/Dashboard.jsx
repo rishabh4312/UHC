@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import PatientForm from "../components/PatientForm";
 
@@ -11,8 +11,13 @@ import PatientAnalysis from "../components/PatientAnalysis";
 import UdayHealthCareLogo from "../components/UdayHealthCareLogo";
 
 import {
+    getPatientsByStatus,
     searchPatients
 } from "../services/patientService";
+
+import {
+    getUpcomingAppointments
+} from "../services/opdService";
 
 import { downloadPatientPDF } from "../utils/pdfReport";
 
@@ -26,6 +31,12 @@ export default function Dashboard() {
 
     const [patients, setPatients] = useState([]);
 
+    const [totalPatients, setTotalPatients] = useState(0);
+
+    const [upcomingAppointments, setUpcomingAppointments] = useState([]);
+
+    const [loadingAppointments, setLoadingAppointments] = useState(false);
+
     const [selectedPatient, setSelectedPatient] = useState(null);
 
     const [selectedPatientOpdMode, setSelectedPatientOpdMode] = useState(null);
@@ -33,6 +44,89 @@ export default function Dashboard() {
     const [editPatient, setEditPatient] = useState(null);
 
     const [popupMessage, setPopupMessage] = useState("");
+
+
+
+    const formatAppointmentDate = (dateString) => {
+
+        if (!dateString) return "Not scheduled";
+
+        const [year, month, day] = dateString.split("-").map(Number);
+
+        const date = new Date(year, month - 1, day);
+
+        if (Number.isNaN(date.getTime())) return dateString;
+
+        return date.toLocaleDateString("en-US", {
+            year: "numeric",
+            month: "short",
+            day: "2-digit",
+            weekday: "short"
+        });
+    };
+
+
+
+    const loadUpcomingAppointments = async () => {
+
+        setLoadingAppointments(true);
+
+        try {
+
+            const res = await getUpcomingAppointments();
+
+            if (res.success) {
+
+                setUpcomingAppointments(res.data || []);
+
+            } else {
+
+                setUpcomingAppointments([]);
+            }
+
+        } catch (err) {
+
+            alert("Failed to load upcoming appointments");
+
+            setUpcomingAppointments([]);
+
+        } finally {
+
+            setLoadingAppointments(false);
+        }
+    };
+
+
+
+    const loadTotalPatients = async () => {
+
+        try {
+
+            const res = await getPatientsByStatus("ALL");
+
+            if (res.success) {
+
+                setTotalPatients((res.data || []).length);
+
+            } else {
+
+                setTotalPatients(0);
+            }
+
+        } catch (err) {
+
+            setTotalPatients(0);
+        }
+    };
+
+
+
+    useEffect(() => {
+
+        loadTotalPatients();
+        loadUpcomingAppointments();
+
+    }, []);
 
 
 
@@ -91,37 +185,90 @@ export default function Dashboard() {
 
     return (
 
-        <div className="min-h-screen bg-slate-50 p-4 md:p-6">
+        <div className="min-h-screen bg-slate-100 p-3 md:p-5">
 
-            {/* HERO CARD */}
-            <div className="mb-8 rounded-[32px] border border-slate-200 bg-gradient-to-br from-slate-50 via-slate-100 to-white p-6 shadow-xl">
-                <div className="grid gap-6 lg:grid-cols-[1.6fr_0.95fr] items-start">
-                    <div className="space-y-6">
+            <div className="mx-auto max-w-7xl">
+
+            {/* HEADER */}
+            <div className="mb-5 rounded-3xl border border-slate-200 bg-white px-4 py-4 shadow-sm md:px-6">
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
                         <UdayHealthCareLogo />
-                        <div className="rounded-3xl bg-slate-950 p-5 text-white shadow-lg">
-                            <p className="text-sm uppercase tracking-[0.18em] text-slate-400">Clinic overview</p>
-                            <div className="mt-4 grid gap-4 sm:grid-cols-2">
-                                <div className="rounded-3xl bg-white p-4 text-slate-900">
-                                    <p className="text-sm font-semibold">Search results</p>
-                                    <p className="mt-3 text-3xl font-semibold">{patients.length}</p>
-                                </div>
-                                <div className="rounded-3xl bg-white p-4 text-slate-900">
-                                    <p className="text-sm font-semibold">Selected action</p>
-                                    <p className="mt-3 text-base text-slate-600">Use the search bar to find patients, then open OPD history or add new visits.</p>
-                                </div>
-                            </div>
+                        <div className="min-w-0 border-t border-slate-200 pt-3 sm:border-l sm:border-t-0 sm:pl-5 sm:pt-0">
+                            <h1 className="text-xl font-bold tracking-tight text-slate-900 md:text-2xl">
+                                Patient Management System
+                            </h1>
+                            <p className="mt-1 text-sm font-semibold uppercase tracking-[0.16em] text-[#004aad]">
+                                Neurology Clinic
+                            </p>
                         </div>
                     </div>
-                    <div className="flex flex-col gap-4">
-                        <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-                            <p className="text-sm font-semibold text-slate-500">Quick start</p>
-                            <p className="mt-3 text-slate-700">Search by patient name or mobile number, then manage visits directly from search results.</p>
+                    <div className="grid grid-cols-2 gap-3 sm:min-w-[360px]">
+                        <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Total Patients</p>
+                            <p className="mt-1 text-2xl font-bold text-slate-900">{totalPatients}</p>
                         </div>
-                        <div className="rounded-3xl border border-slate-200 bg-gradient-to-br from-blue-600 to-indigo-700 p-5 text-white shadow-lg">
-                            <p className="text-sm uppercase tracking-[0.18em] text-blue-100">Pro tip</p>
-                            <p className="mt-3 text-base font-semibold">Keep patient records updated so OPD history and prescriptions are easy to retrieve.</p>
+                        <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Upcoming Appointments</p>
+                            <p className="mt-1 text-2xl font-bold text-slate-900">{upcomingAppointments.length}</p>
                         </div>
                     </div>
+                </div>
+
+                {/* NAVIGATION */}
+                <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+
+                    <button
+                        onClick={() => setView("SEARCH")}
+                        className={`rounded-2xl px-4 py-3 text-sm font-semibold shadow-sm transition
+                        ${view === "SEARCH"
+                                ? "bg-blue-600 text-white"
+                                : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                            }`}
+                    >
+                        Search Patients
+                    </button>
+
+
+
+                    <button
+                        onClick={() => setView("ADD")}
+                        className={`rounded-2xl px-4 py-3 text-sm font-semibold shadow-sm transition
+                        ${view === "ADD"
+                                ? "bg-emerald-600 text-white"
+                                : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                            }`}
+                    >
+                        Add Patient
+                    </button>
+
+
+
+                    <button
+                        onClick={() => setView("ANALYSIS")}
+                        className={`rounded-2xl px-4 py-3 text-sm font-semibold shadow-sm transition
+                        ${view === "ANALYSIS"
+                                ? "bg-purple-600 text-white"
+                                : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                            }`}
+                    >
+                        Patients Analysis
+                    </button>
+
+                    <button
+                        onClick={() => {
+                            setView("UPCOMING");
+                            loadUpcomingAppointments();
+                        }}
+                        className={`rounded-2xl px-4 py-3 text-sm font-semibold shadow-sm transition
+                        ${view === "UPCOMING"
+                                ? "bg-cyan-700 text-white"
+                                : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                            }`}
+                    >
+                        Upcoming Appointments
+                    </button>
+
                 </div>
             </div>
 
@@ -141,50 +288,6 @@ export default function Dashboard() {
                     </div>
                 )
             }
-
-
-
-            {/* NAVIGATION */}
-            <div className="flex flex-wrap gap-3 mb-6">
-
-                <button
-                    onClick={() => setView("SEARCH")}
-                    className={`px-5 py-3 rounded-2xl text-white text-sm md:text-base font-semibold shadow-lg transition duration-300 hover:scale-105
-                    ${view === "SEARCH"
-                            ? "bg-gradient-to-r from-blue-600 to-indigo-700"
-                            : "bg-slate-700 hover:bg-slate-800"
-                        }`}
-                >
-                    Search Patients
-                </button>
-
-
-
-                <button
-                    onClick={() => setView("ADD")}
-                    className={`px-5 py-3 rounded-2xl text-white text-sm md:text-base font-semibold shadow-lg transition duration-300 hover:scale-105
-                    ${view === "ADD"
-                            ? "bg-gradient-to-r from-emerald-500 to-green-700"
-                            : "bg-slate-700 hover:bg-slate-800"
-                        }`}
-                >
-                    Add Patient
-                </button>
-
-
-
-                <button
-                    onClick={() => setView("ANALYSIS")}
-                    className={`px-5 py-3 rounded-2xl text-white text-sm md:text-base font-semibold shadow-lg transition duration-300 hover:scale-105
-                    ${view === "ANALYSIS"
-                            ? "bg-gradient-to-r from-purple-600 to-pink-600"
-                            : "bg-slate-700 hover:bg-slate-800"
-                        }`}
-                >
-                    Patients Analysis
-                </button>
-
-            </div>
 
 
 
@@ -269,6 +372,10 @@ export default function Dashboard() {
                                                 <tr>
 
                                                     <th className="text-left px-5 py-3 text-slate-700 font-semibold text-sm md:text-base">
+                                                        Patient ID
+                                                    </th>
+
+                                                    <th className="text-left px-5 py-3 text-slate-700 font-semibold text-sm md:text-base">
                                                         Patient Name
                                                     </th>
 
@@ -295,6 +402,12 @@ export default function Dashboard() {
                                                             key={p.id}
                                                             className="border-t border-slate-200 hover:bg-blue-50/70 transition-all"
                                                         >
+
+                                                            <td className="px-5 py-4 text-slate-700 font-semibold text-sm md:text-base">
+
+                                                                {p.id}
+
+                                                            </td>
 
                                                             <td className="px-5 py-4 text-slate-700 font-semibold text-sm md:text-base">
 
@@ -403,6 +516,91 @@ export default function Dashboard() {
             }
 
 
+            {/* UPCOMING APPOINTMENTS VIEW */}
+            {
+                view === "UPCOMING" && (
+
+                    <div className="bg-white border border-slate-200 shadow-lg rounded-3xl overflow-hidden">
+                        <div className="flex flex-col gap-4 border-b bg-white/70 px-6 py-5 md:flex-row md:items-center md:justify-between">
+                            <div>
+                                <h2 className="text-2xl font-bold text-slate-700">
+                                    Upcoming Appointments
+                                </h2>
+                                <p className="mt-2 text-sm text-slate-500">
+                                    Patients sorted by their next follow-up appointment date.
+                                </p>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={loadUpcomingAppointments}
+                                className="rounded-2xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-blue-700"
+                            >
+                                Refresh
+                            </button>
+                        </div>
+
+                        {loadingAppointments ? (
+
+                            <div className="p-8 text-center text-slate-500">
+                                Loading upcoming appointments...
+                            </div>
+
+                        ) : upcomingAppointments.length === 0 ? (
+
+                            <div className="p-8 text-center text-slate-500">
+                                No upcoming follow-up appointments found.
+                            </div>
+
+                        ) : (
+
+                            <div className="overflow-auto">
+                                <table className="w-full">
+                                    <thead className="bg-slate-100/80">
+                                        <tr>
+                                            <th className="text-left px-5 py-3 text-slate-700 font-semibold text-sm md:text-base">
+                                                Patient ID
+                                            </th>
+                                            <th className="text-left px-5 py-3 text-slate-700 font-semibold text-sm md:text-base">
+                                                Follow-up Date
+                                            </th>
+                                            <th className="text-left px-5 py-3 text-slate-700 font-semibold text-sm md:text-base">
+                                                Patient Name
+                                            </th>
+                                            <th className="text-left px-5 py-3 text-slate-700 font-semibold text-sm md:text-base">
+                                                Mobile Number
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {upcomingAppointments.map((appointment) => (
+
+                                            <tr
+                                                key={appointment.patient_id}
+                                                className="border-t border-slate-200 hover:bg-blue-50/70 transition-all"
+                                            >
+                                                <td className="px-5 py-4 text-slate-700 font-semibold text-sm md:text-base">
+                                                    {appointment.patient_id}
+                                                </td>
+                                                <td className="px-5 py-4 text-slate-700 font-semibold text-sm md:text-base">
+                                                    {formatAppointmentDate(appointment.followup_date)}
+                                                </td>
+                                                <td className="px-5 py-4 text-slate-700 font-semibold text-sm md:text-base">
+                                                    {appointment.first_name} {appointment.last_name}
+                                                </td>
+                                                <td className="px-5 py-4 text-slate-600 text-sm md:text-base">
+                                                    {appointment.mobile}
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
+                    </div>
+                )
+            }
+
+
 
             {/* MODALS */}
             {
@@ -435,6 +633,8 @@ export default function Dashboard() {
                     />
                 )
             }
+
+            </div>
 
         </div>
     );

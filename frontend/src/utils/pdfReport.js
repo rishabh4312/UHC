@@ -91,6 +91,7 @@ export const downloadPatientPDF = async (patient, options = {}) => {
         startY: 40,
         head: [["Field", "Value"]],
         body: [
+            ["Patient ID", patient.id],
             ["Patient Name", `${patient.first_name} ${patient.last_name}`],
             ["Mobile", patient.mobile || ""],
             ["Age", patient.age || ""],

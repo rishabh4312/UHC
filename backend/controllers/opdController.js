@@ -109,9 +109,52 @@ const getPatientOpdHistory = (req, res) => {
 };
 
 
+// =====================================
+// GET UPCOMING FOLLOW-UP APPOINTMENTS
+// =====================================
+const getUpcomingAppointments = (req, res) => {
+
+    const sql = `
+        SELECT
+            p.id AS patient_id,
+            p.first_name,
+            p.last_name,
+            p.mobile,
+            MIN(DATE(o.followup_date)) AS followup_date
+        FROM opd_visits o
+        INNER JOIN patients p ON p.id = o.patient_id
+        WHERE
+            o.followup_date IS NOT NULL
+            AND TRIM(o.followup_date) != ''
+            AND DATE(o.followup_date) >= DATE('now', 'localtime')
+        GROUP BY p.id, p.first_name, p.last_name, p.mobile
+        ORDER BY DATE(followup_date) ASC, LOWER(p.first_name) ASC, LOWER(p.last_name) ASC
+    `;
+
+    db.all(sql, [], (err, rows) => {
+
+        if (err) {
+
+            console.log(err.message);
+
+            return res.status(500).json({
+                success: false,
+                message: "Database error"
+            });
+        }
+
+        res.json({
+            success: true,
+            data: rows
+        });
+    });
+};
+
+
 
 
 module.exports = {
     addOpdVisit,
-    getPatientOpdHistory
+    getPatientOpdHistory,
+    getUpcomingAppointments
 };

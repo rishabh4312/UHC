@@ -138,6 +138,10 @@ export default function PatientAnalysis({
                         <tr>
 
                             <th className="text-left px-4 py-3 font-semibold text-slate-700 text-sm md:text-base">
+                                Patient ID
+                            </th>
+
+                            <th className="text-left px-4 py-3 font-semibold text-slate-700 text-sm md:text-base">
                                 Name
                             </th>
 
@@ -164,6 +168,10 @@ export default function PatientAnalysis({
                                     key={p.id}
                                     className="border-t hover:bg-blue-50 transition-all"
                                 >
+
+                                    <td className="px-6 py-4 text-slate-700 font-semibold">
+                                        {p.id}
+                                    </td>
 
                                     <td className="px-6 py-4 text-slate-700 font-medium">
                                         {p.first_name} {p.last_name}

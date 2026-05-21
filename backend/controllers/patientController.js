@@ -291,7 +291,7 @@ const searchPatients = (req, res) => {
 
             mobile LIKE ?
 
-        ORDER BY id DESC
+        ORDER BY id ASC
     `;
 
 
@@ -342,7 +342,7 @@ const getPatientsByStatus = (req, res) => {
         sql = `
             SELECT *
             FROM patients
-            ORDER BY id DESC
+            ORDER BY id ASC
         `;
 
     } else {
@@ -351,7 +351,7 @@ const getPatientsByStatus = (req, res) => {
             SELECT *
             FROM patients
             WHERE treatment_status=?
-            ORDER BY id DESC
+            ORDER BY id ASC
         `;
     }
 

@@ -44,7 +44,7 @@ export default function PatientForm({
             const response =
                 await addPatient(formData);
 
-            alert("Patient added successfully");
+            alert(`Patient added successfully. Patient ID: ${response.patient_id}`);
 
             setFormData({
 
