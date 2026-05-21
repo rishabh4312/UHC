@@ -7,6 +7,7 @@ const upload = require("../middleware/uploadMiddleware");
 const {
     uploadPrescription,
     uploadLabReport,
+    uploadMedicineBill,
     getPrescriptionsByVisit
 } = require("../controllers/prescriptionController");
 
@@ -23,6 +24,13 @@ router.post(
     "/upload-lab",
     upload.single("lab_report"),
     uploadLabReport
+);
+
+// UPLOAD MEDICINE BILL IMAGE
+router.post(
+    "/upload-bill",
+    upload.single("medicine_bill"),
+    uploadMedicineBill
 );
 
 

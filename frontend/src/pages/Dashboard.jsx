@@ -339,9 +339,10 @@ export default function Dashboard() {
 
 
                                                                     <button
-                                                                        onClick={() =>
-                                                                            downloadPatientPDF(p).catch(() => alert("Failed to generate PDF"))
-                                                                        }
+                                                                        onClick={() => {
+                                                                            const includeMedicineBill = window.confirm("Include medicine bill PDF in the downloaded report?");
+                                                                            downloadPatientPDF(p, { includeMedicineBill }).catch(() => alert("Failed to generate PDF"));
+                                                                        }}
                                                                         className="bg-gradient-to-r from-red-500 to-pink-600 text-white px-4 py-2 rounded-2xl text-sm font-semibold shadow-md hover:scale-105 transition duration-300"
                                                                     >
                                                                         Download PDF

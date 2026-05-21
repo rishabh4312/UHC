@@ -28,22 +28,25 @@ const storage = multer.diskStorage({
 // FILE FILTER
 const fileFilter = (req, file, cb) => {
 
-    const allowedTypes = /jpeg|jpg|png/;
+    const imageTypes = /jpeg|jpg|png/;
+    const pdfTypes = /pdf/;
 
-    const extname = allowedTypes.test(
-        path.extname(file.originalname).toLowerCase()
-    );
+    const extension = path.extname(file.originalname).toLowerCase();
+    const isImage = imageTypes.test(extension);
+    const isPdf = pdfTypes.test(extension);
 
-    const mimetype = allowedTypes.test(file.mimetype);
-
-    if (extname && mimetype) {
-
-        return cb(null, true);
-
-    } else {
-
-        cb("Only JPG, JPEG, PNG allowed");
+    if (file.fieldname === "medicine_bill") {
+        if (isImage && imageTypes.test(file.mimetype)) {
+            return cb(null, true);
+        }
+        return cb("Only JPG, JPEG, PNG files allowed for medicine bills");
     }
+
+    if (isImage && imageTypes.test(file.mimetype)) {
+        return cb(null, true);
+    }
+
+    cb("Only JPG, JPEG, PNG allowed for image uploads");
 };
 
 

@@ -31,6 +31,40 @@ const getImageFormat = (dataUrl) => {
     return "JPEG";
 };
 
+const formatVisitDateTime = (visit) => {
+    const timestamp = visit?.created_at || visit?.visit_date;
+    if (!timestamp) return "";
+
+    const normalized = timestamp.replace(" ", "T");
+    const date = new Date(normalized);
+    if (Number.isNaN(date.getTime())) {
+        return visit.visit_date || "";
+    }
+
+    const datePart = date.toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit"
+    });
+    const weekday = date.toLocaleDateString("en-US", { weekday: "short" }).toLowerCase();
+    const timePart = date.toLocaleTimeString("en-US", {
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true
+    });
+
+    return `${datePart} · ${weekday} · ${timePart}`;
+};
+
+const getImageDimensions = (dataUrl) => {
+    return new Promise((resolve, reject) => {
+        const image = new Image();
+        image.onload = () => resolve({ width: image.width, height: image.height });
+        image.onerror = reject;
+        image.src = dataUrl;
+    });
+};
+
 const ensurePageSpace = (doc, currentY, requiredHeight = 110) => {
     if (currentY + requiredHeight > 280) {
         doc.addPage();
@@ -39,7 +73,9 @@ const ensurePageSpace = (doc, currentY, requiredHeight = 110) => {
     return currentY;
 };
 
-export const downloadPatientPDF = async (patient) => {
+export const downloadPatientPDF = async (patient, options = {}) => {
+    const { includeMedicineBill = false } = options;
+
     if (!patient || !patient.id) {
         throw new Error("Patient data is required to generate PDF");
     }
@@ -84,7 +120,7 @@ export const downloadPatientPDF = async (patient) => {
         startY: currentY,
         head: [["Date", "Diagnosis", "Prescription"]],
         body: visits.length > 0
-            ? visits.map((opd) => [opd.visit_date || "", opd.diagnosis || "", opd.medicines || ""])
+            ? visits.map((opd) => [formatVisitDateTime(opd), opd.diagnosis || "", opd.medicines || ""])
             : [["No OPD Records", "", ""]]
     });
 
@@ -92,7 +128,9 @@ export const downloadPatientPDF = async (patient) => {
 
     if (visits.length > 0) {
         for (const opd of visits) {
-            const visitLabel = opd.visit_date ? `Visit Date: ${opd.visit_date}` : `Visit ${opd.id}`;
+            const visitLabel = formatVisitDateTime(opd)
+                ? `Visit Date: ${formatVisitDateTime(opd)}`
+                : `Visit ${opd.id}`;
 
             const prescriptionsResponse = await getPrescriptionsByVisit(opd.id);
             const prescriptions = prescriptionsResponse.success ? prescriptionsResponse.data || [] : [];
@@ -140,6 +178,34 @@ export const downloadPatientPDF = async (patient) => {
                     currentY += 110;
                 } catch (error) {
                     console.error("Failed to attach lab report image to PDF", error);
+                }
+            }
+
+            if (includeMedicineBill && opd.medicine_bill) {
+                const billUrl = resolveApiImageUrl(opd.medicine_bill);
+
+                try {
+                    const imgData = await getBase64FromUrl(billUrl);
+                    const format = getImageFormat(imgData);
+                    const { width: originalWidth, height: originalHeight } = await getImageDimensions(imgData);
+                    const maxWidth = 180;
+                    const displayHeight = (originalHeight / originalWidth) * maxWidth;
+
+                    currentY = ensurePageSpace(doc, currentY, displayHeight + 30);
+                    doc.setFontSize(15);
+                    doc.text(`Medicine Bill (${visitLabel})`, 14, currentY);
+                    currentY += 10;
+                    doc.addImage(imgData, format, 14, currentY, maxWidth, displayHeight);
+                    currentY += displayHeight + 10;
+                } catch (error) {
+                    console.error("Failed to attach medicine bill image to PDF", error);
+                    currentY = ensurePageSpace(doc, currentY, 50);
+                    doc.setFontSize(15);
+                    doc.text(`Medicine Bill (${visitLabel})`, 14, currentY);
+                    currentY += 10;
+                    doc.setFontSize(12);
+                    doc.text(`Unable to attach medicine bill image`, 14, currentY);
+                    currentY += 12;
                 }
             }
         }

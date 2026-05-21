@@ -77,6 +77,8 @@ CREATE TABLE IF NOT EXISTS opd_visits (
 
     lab_report TEXT,
 
+    medicine_bill TEXT,
+
     visit_date DATETIME DEFAULT CURRENT_TIMESTAMP
 )
 `);
@@ -99,6 +101,15 @@ db.all(`PRAGMA table_info(opd_visits)`, [], (err, columns) => {
     const hasLabReport = columns.some((column) => column.name === "lab_report");
     if (!hasLabReport) {
         db.run(`ALTER TABLE opd_visits ADD COLUMN lab_report TEXT`, (alterErr) => {
+            if (alterErr) {
+                console.log(alterErr.message);
+            }
+        });
+    }
+
+    const hasMedicineBill = columns.some((column) => column.name === "medicine_bill");
+    if (!hasMedicineBill) {
+        db.run(`ALTER TABLE opd_visits ADD COLUMN medicine_bill TEXT`, (alterErr) => {
             if (alterErr) {
                 console.log(alterErr.message);
             }

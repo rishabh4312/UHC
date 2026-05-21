@@ -37,6 +37,23 @@ export const uploadLabReport = async (formData) => {
 };
 
 
+// UPLOAD MEDICINE BILL
+export const uploadMedicineBill = async (formData) => {
+
+    const response = await axios.post(
+        `${API_URL}/upload-bill`,
+        formData,
+        {
+            headers: {
+                "Content-Type": "multipart/form-data"
+            }
+        }
+    );
+
+    return response.data;
+};
+
+
 // GET PRESCRIPTIONS BY VISIT
 export const getPrescriptionsByVisit = async (visitId) => {
 
