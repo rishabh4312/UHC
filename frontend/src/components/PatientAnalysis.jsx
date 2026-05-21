@@ -8,17 +8,21 @@ import {
     getPatientsByStatus
 } from "../services/patientService";
 
-
+import { downloadPatientPDF } from "../utils/pdfReport";
 
 export default function PatientAnalysis({
 
-    onOpenOPD,
+    onOpenOPDView,
+
+    onOpenOPDAdd,
 
     onEdit
 
 }) {
 
     const [patients, setPatients] = useState([]);
+
+    const [activeOpdMenu, setActiveOpdMenu] = useState(null);
 
     const [title, setTitle] = useState("All Patients");
 
@@ -58,257 +62,32 @@ export default function PatientAnalysis({
 
 
 
-    // ==========================================
-    // IMAGE TO BASE64
-    // ==========================================
-    const getBase64FromUrl = async (url) => {
-
-        const data = await fetch(url);
-
-        const blob = await data.blob();
-
-        return new Promise((resolve) => {
-
-            const reader = new FileReader();
-
-            reader.readAsDataURL(blob);
-
-            reader.onloadend = () => {
-                resolve(reader.result);
-            };
-        });
-    };
-
-
-
-    // ==========================================
-    // DOWNLOAD SINGLE PATIENT PDF
-    // ==========================================
-    const downloadPatientPDF = async (patient) => {
-
-        const doc = new jsPDF();
-
-
-
-        // ======================================
-        // TITLE
-        // ======================================
-        doc.setFontSize(22);
-
-        doc.text("Uday Health Care", 14, 20);
-
-        doc.setFontSize(14);
-
-        doc.text("Neurology Clinic Patient Report", 14, 30);
-
-
-
-        // ======================================
-        // PATIENT INFO TABLE
-        // ======================================
-        autoTable(doc, {
-            startY: 40,
-            head: [["Field", "Value"]],
-            body: [
-                ["Patient Name", `${patient.first_name} ${patient.last_name}`],
-                ["Mobile", patient.mobile || ""],
-                ["Age", patient.age || ""],
-                ["Gender", patient.gender || ""],
-                ["Treatment Status", patient.treatment_status || ""],
-                ["Treatment Start", patient.treatment_start_date || ""],
-                ["Treatment End", patient.treatment_end_date || ""],
-            ]
-        });
-
-
-
-        let currentY = doc.lastAutoTable.finalY + 15;
-
-
-
-        // ======================================
-        // OPD DETAILS
-        // ======================================
-        doc.setFontSize(16);
-
-        doc.text("OPD Details", 14, currentY);
-
-        currentY += 10;
-
-
-
-        autoTable(doc, {
-            startY: currentY,
-            head: [["Date", "Diagnosis", "Prescription"]],
-            body: patient.opd_visits?.map((opd) => ([
-                opd.visit_date || "",
-                opd.diagnosis || "",
-                opd.prescription || ""
-            ])) || [["No OPD Records", "", ""]]
-        });
-
-
-
-        currentY = doc.lastAutoTable.finalY + 15;
-
-
-
-        // ======================================
-        // PRESCRIPTION IMAGES
-        // ======================================
-        if (
-            patient.opd_visits &&
-            patient.opd_visits.length > 0
-        ) {
-
-            for (const opd of patient.opd_visits) {
-
-                if (opd.prescription_image) {
-
-                    try {
-
-                        if (currentY > 230) {
-
-                            doc.addPage();
-
-                            currentY = 20;
-                        }
-
-
-
-                        doc.setFontSize(15);
-
-                        doc.text(
-                            "Prescription Image",
-                            14,
-                            currentY
-                        );
-
-                        currentY += 10;
-
-
-
-                        const imgData =
-                            await getBase64FromUrl(
-                                opd.prescription_image
-                            );
-
-
-
-                        doc.addImage(
-                            imgData,
-                            "JPEG",
-                            14,
-                            currentY,
-                            80,
-                            80
-                        );
-
-
-
-                        currentY += 90;
-
-                    } catch (err) {
-
-                        console.error(
-                            "Prescription image failed",
-                            err
-                        );
-                    }
-                }
-            }
-        }
-
-
-
-        // ======================================
-        // LAB REPORTS
-        // ======================================
-        if (
-            patient.lab_reports &&
-            patient.lab_reports.length > 0
-        ) {
-
-            for (const report of patient.lab_reports) {
-
-                try {
-
-                    if (currentY > 230) {
-
-                        doc.addPage();
-
-                        currentY = 20;
-                    }
-
-
-
-                    doc.setFontSize(15);
-
-                    doc.text(
-                        "Lab Report",
-                        14,
-                        currentY
-                    );
-
-                    currentY += 10;
-
-
-
-                    const imgData =
-                        await getBase64FromUrl(
-                            report.image_url
-                        );
-
-
-
-                    doc.addImage(
-                        imgData,
-                        "JPEG",
-                        14,
-                        currentY,
-                        100,
-                        100
-                    );
-
-
-
-                    currentY += 110;
-
-                } catch (err) {
-
-                    console.error(
-                        "Lab report image failed",
-                        err
-                    );
-                }
-            }
-        }
-
-
-
-        // ======================================
-        // SAVE PDF
-        // ======================================
-        doc.save(
-            `${patient.first_name}_${patient.last_name}_report.pdf`
-        );
-    };
-
-
-
     return (
 
-        <div className="bg-white/70 backdrop-blur-xl border border-white/30 shadow-2xl rounded-[32px] p-8 mt-4">
+        <div className="bg-white border border-slate-200 shadow-lg rounded-3xl p-6 mt-4">
 
-            {/* HEADER */}
-            <div className="flex flex-wrap justify-between items-center mb-6 gap-4">
+            <div className="grid gap-4 lg:grid-cols-3 mb-6">
+                <div className="rounded-3xl border border-slate-200 bg-slate-50 p-5 shadow-sm">
+                    <p className="text-sm font-semibold text-slate-500">Current view</p>
+                    <p className="mt-3 text-xl font-semibold text-slate-900">{title}</p>
+                </div>
+                <div className="rounded-3xl border border-slate-200 bg-slate-50 p-5 shadow-sm">
+                    <p className="text-sm font-semibold text-slate-500">Patients loaded</p>
+                    <p className="mt-3 text-xl font-semibold text-slate-900">{patients.length}</p>
+                </div>
+                <div className="rounded-3xl border border-slate-200 bg-slate-50 p-5 shadow-sm">
+                    <p className="text-sm font-semibold text-slate-500">Next step</p>
+                    <p className="mt-3 text-slate-700">Tap OPD to manage visits or add a visit directly from the action menu.</p>
+                </div>
+            </div>
 
-                <h2 className="text-3xl font-bold text-slate-700">
-
-                    {title}
-
-                </h2>
-
+            <div className="flex flex-wrap justify-between items-center mb-5 gap-4">
+                <div>
+                    <h2 className="text-2xl font-bold text-slate-700">
+                        {title}
+                    </h2>
+                    <p className="mt-2 text-sm text-slate-500">Filter patient status and check actionable insights in the table below.</p>
+                </div>
             </div>
 
 
@@ -318,7 +97,7 @@ export default function PatientAnalysis({
 
                 <button
                     onClick={() => loadPatients("ALL")}
-                    className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white px-5 py-3 rounded-2xl font-semibold shadow-lg"
+                    className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white px-4 py-2 rounded-2xl text-sm font-semibold shadow-md"
                 >
                     All Patients
                 </button>
@@ -329,7 +108,7 @@ export default function PatientAnalysis({
                     onClick={() =>
                         loadPatients("UNDER_TREATMENT")
                     }
-                    className="bg-gradient-to-r from-orange-500 to-amber-600 text-white px-5 py-3 rounded-2xl font-semibold shadow-lg"
+                    className="bg-gradient-to-r from-orange-500 to-amber-600 text-white px-4 py-2 rounded-2xl text-sm font-semibold shadow-md"
                 >
                     Under Treatment
                 </button>
@@ -340,7 +119,7 @@ export default function PatientAnalysis({
                     onClick={() =>
                         loadPatients("COMPLETED")
                     }
-                    className="bg-gradient-to-r from-green-500 to-emerald-700 text-white px-5 py-3 rounded-2xl font-semibold shadow-lg"
+                    className="bg-gradient-to-r from-green-500 to-emerald-700 text-white px-4 py-2 rounded-2xl text-sm font-semibold shadow-md"
                 >
                     Completed
                 </button>
@@ -358,15 +137,15 @@ export default function PatientAnalysis({
 
                         <tr>
 
-                            <th className="text-left px-6 py-4 font-bold text-slate-700">
+                            <th className="text-left px-4 py-3 font-semibold text-slate-700 text-sm md:text-base">
                                 Name
                             </th>
 
-                            <th className="text-left px-6 py-4 font-bold text-slate-700">
+                            <th className="text-left px-4 py-3 font-semibold text-slate-700 text-sm md:text-base">
                                 Mobile
                             </th>
 
-                            <th className="text-left px-6 py-4 font-bold text-slate-700">
+                            <th className="text-left px-4 py-3 font-semibold text-slate-700 text-sm md:text-base">
                                 Actions
                             </th>
 
@@ -399,39 +178,58 @@ export default function PatientAnalysis({
                                         <div className="flex gap-3 flex-wrap">
 
                                             {/* OPD */}
-                                            <button
-                                                onClick={() =>
-                                                    onOpenOPD(p)
-                                                }
-                                                className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-5 py-2 rounded-xl font-semibold shadow-md"
-                                            >
-                                                OPD
-                                            </button>
+                                            <div className="relative">
+                                                <button
+                                                    onClick={() =>
+                                                        setActiveOpdMenu(activeOpdMenu === p.id ? null : p.id)
+                                                    }
+                                                    className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-5 py-2 rounded-xl font-semibold shadow-md"
+                                                >
+                                                    OPD
+                                                </button>
 
+                                                {activeOpdMenu === p.id && (
+                                                    <div className="absolute right-0 mt-2 w-44 rounded-2xl bg-white border border-slate-200 shadow-xl z-10">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => {
+                                                                onOpenOPDView(p);
+                                                                setActiveOpdMenu(null);
+                                                            }}
+                                                            className="block w-full text-left px-4 py-3 hover:bg-slate-100"
+                                                        >
+                                                            View OPDs
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => {
+                                                                onOpenOPDAdd(p);
+                                                                setActiveOpdMenu(null);
+                                                            }}
+                                                            className="block w-full text-left px-4 py-3 hover:bg-slate-100"
+                                                        >
+                                                            Add OPD Visit
+                                                        </button>
+                                                    </div>
+                                                )}
+                                            </div>
 
 
                                             {/* EDIT */}
                                             <button
-                                                onClick={() =>
-                                                    onEdit(p)
-                                                }
-                                                className="bg-gradient-to-r from-emerald-500 to-green-600 text-white px-5 py-2 rounded-xl font-semibold shadow-md"
+                                                onClick={() => onEdit(p)}
+                                                className="bg-gradient-to-r from-emerald-500 to-green-600 text-white px-4 py-2 rounded-2xl text-sm font-semibold shadow-md hover:scale-105 transition duration-300"
                                             >
                                                 Edit
                                             </button>
 
-
-
                                             {/* PDF */}
                                             <button
-                                                onClick={() =>
-                                                    downloadPatientPDF(p)
-                                                }
-                                                className="bg-gradient-to-r from-red-500 to-pink-600 text-white px-5 py-2 rounded-xl font-semibold shadow-md"
+                                                onClick={() => downloadPatientPDF(p)}
+                                                className="bg-gradient-to-r from-red-500 to-pink-600 text-white px-4 py-2 rounded-2xl text-sm font-semibold shadow-md hover:scale-105 transition duration-300"
                                             >
-                                                Download PDF
+                                                PDF
                                             </button>
-
                                         </div>
 
                                     </td>

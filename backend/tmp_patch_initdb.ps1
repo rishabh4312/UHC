@@ -1,3 +1,4 @@
+$content = @"
 const sqlite3 = require("sqlite3").verbose();
 
 const path = require("path");
@@ -49,7 +50,6 @@ CREATE TABLE IF NOT EXISTS patients (
     UNIQUE(first_name, last_name, mobile)
 )
 `);
-
 
 
 
@@ -108,7 +108,6 @@ db.all(`PRAGMA table_info(opd_visits)`, [], (err, columns) => {
 
 
 
-
 // =====================================
 // PRESCRIPTION IMAGES TABLE
 // =====================================
@@ -130,3 +129,5 @@ CREATE TABLE IF NOT EXISTS prescription_images (
 
 
 module.exports = db;
+"@
+Set-Content -Path "backend/database/initDb.js" -Value $content -Encoding utf8

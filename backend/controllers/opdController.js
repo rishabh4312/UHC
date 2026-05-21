@@ -12,6 +12,8 @@ const addOpdVisit = (req, res) => {
         symptoms,
         diagnosis,
         notes,
+        medicines,
+        visit_date,
         followup_date
     } = req.body;
 
@@ -30,9 +32,11 @@ const addOpdVisit = (req, res) => {
             symptoms,
             diagnosis,
             notes,
+            medicines,
+            visit_date,
             followup_date
         )
-        VALUES (?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
     db.run(
@@ -43,6 +47,8 @@ const addOpdVisit = (req, res) => {
             symptoms,
             diagnosis,
             notes,
+            medicines,
+            visit_date,
             followup_date
         ],
         function(err) {

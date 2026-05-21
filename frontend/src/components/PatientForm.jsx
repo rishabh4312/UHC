@@ -84,114 +84,119 @@ export default function PatientForm({
 
     return (
 
-        <div className="bg-white p-6 rounded-xl shadow-lg">
+        <div className="bg-white p-6 rounded-[28px] shadow-xl border border-slate-200 max-w-3xl mx-auto">
 
-            <h2 className="text-2xl font-bold mb-4">
+            <h2 className="text-2xl font-semibold text-slate-800 mb-5">
                 Add Patient
             </h2>
 
-
-
             <form
                 onSubmit={handleSubmit}
-                className="space-y-4"
+                className="space-y-6"
             >
 
-                <input
-                    name="first_name"
-                    placeholder="First Name"
-                    value={formData.first_name}
-                    onChange={handleChange}
-                    className="w-full border p-2 rounded"
-                />
+                <div className="grid gap-4 md:grid-cols-2">
+                    <label className="block">
+                        <span className="text-sm font-medium text-slate-600">First Name</span>
+                        <input
+                            name="first_name"
+                            placeholder="Enter first name"
+                            value={formData.first_name}
+                            onChange={handleChange}
+                            className="mt-2 w-full border border-slate-300 px-4 py-3 rounded-3xl bg-slate-50 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
+                        />
+                    </label>
 
+                    <label className="block">
+                        <span className="text-sm font-medium text-slate-600">Last Name</span>
+                        <input
+                            name="last_name"
+                            placeholder="Enter last name"
+                            value={formData.last_name}
+                            onChange={handleChange}
+                            className="mt-2 w-full border border-slate-300 px-4 py-3 rounded-3xl bg-slate-50 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
+                        />
+                    </label>
+                </div>
 
+                <div className="grid gap-4 md:grid-cols-2">
+                    <label className="block">
+                        <span className="text-sm font-medium text-slate-600">Mobile Number</span>
+                        <input
+                            name="mobile"
+                            placeholder="Enter mobile number"
+                            value={formData.mobile}
+                            onChange={handleChange}
+                            className="mt-2 w-full border border-slate-300 px-4 py-3 rounded-3xl bg-slate-50 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
+                        />
+                    </label>
 
-                <input
-                    name="last_name"
-                    placeholder="Last Name"
-                    value={formData.last_name}
-                    onChange={handleChange}
-                    className="w-full border p-2 rounded"
-                />
+                    <label className="block">
+                        <span className="text-sm font-medium text-slate-600">Age</span>
+                        <input
+                            name="age"
+                            placeholder="Enter age"
+                            value={formData.age}
+                            onChange={handleChange}
+                            className="mt-2 w-full border border-slate-300 px-4 py-3 rounded-3xl bg-slate-50 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
+                        />
+                    </label>
+                </div>
 
+                <div className="grid gap-4 md:grid-cols-2">
+                    <label className="block">
+                        <span className="text-sm font-medium text-slate-600">Gender</span>
+                        <select
+                            name="gender"
+                            value={formData.gender}
+                            onChange={handleChange}
+                            className="mt-2 w-full border border-slate-300 px-4 py-3 rounded-3xl bg-slate-50 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
+                        >
+                            <option value="">Select gender</option>
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </label>
 
+                    <label className="block">
+                        <span className="text-sm font-medium text-slate-600">Address</span>
+                        <textarea
+                            name="address"
+                            placeholder="Enter address"
+                            value={formData.address}
+                            onChange={handleChange}
+                            className="mt-2 w-full min-h-[108px] border border-slate-300 px-4 py-3 rounded-3xl bg-slate-50 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
+                        />
+                    </label>
+                </div>
 
-                <input
-                    name="mobile"
-                    placeholder="Mobile"
-                    value={formData.mobile}
-                    onChange={handleChange}
-                    className="w-full border p-2 rounded"
-                />
+                <div className="grid gap-4 md:grid-cols-2">
+                    <label className="block">
+                        <span className="text-sm font-medium text-slate-600">Treatment Start Date</span>
+                        <input
+                            type="date"
+                            name="treatment_start_date"
+                            value={formData.treatment_start_date}
+                            onChange={handleChange}
+                            className="mt-2 w-full border border-slate-300 px-4 py-3 rounded-3xl bg-slate-50 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
+                        />
+                    </label>
 
-
-
-                <input
-                    name="age"
-                    placeholder="Age"
-                    value={formData.age}
-                    onChange={handleChange}
-                    className="w-full border p-2 rounded"
-                />
-
-
-
-                <select
-                    name="gender"
-                    value={formData.gender}
-                    onChange={handleChange}
-                    className="w-full border p-2 rounded"
-                >
-
-                    <option value="">
-                        Gender
-                    </option>
-
-                    <option value="Male">
-                        Male
-                    </option>
-
-                    <option value="Female">
-                        Female
-                    </option>
-
-                </select>
-
-
-
-                <textarea
-                    name="address"
-                    placeholder="Address"
-                    value={formData.address}
-                    onChange={handleChange}
-                    className="w-full border p-2 rounded"
-                />
-
-
-
-                <input
-                    type="date"
-                    name="treatment_start_date"
-                    value={formData.treatment_start_date}
-                    onChange={handleChange}
-                    className="w-full border p-2 rounded"
-                />
-
-
-
-                <input
-                    type="date"
-                    name="treatment_end_date"
-                    value={formData.treatment_end_date}
-                    onChange={handleChange}
-                    className="w-full border p-2 rounded"
-                />
-
-
+                    <label className="block">
+                        <span className="text-sm font-medium text-slate-600">Treatment End Date</span>
+                        <input
+                            type="date"
+                            name="treatment_end_date"
+                            value={formData.treatment_end_date}
+                            onChange={handleChange}
+                            className="mt-2 w-full border border-slate-300 px-4 py-3 rounded-3xl bg-slate-50 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
+                        />
+                    </label>
+                </div>
 
                 <button
-                    className="bg-blue-600 text-white px-4 py-2 rounded"
+                    className="w-full md:w-auto bg-blue-600 text-white px-6 py-3 rounded-3xl font-semibold shadow-lg hover:bg-blue-700 transition-colors"
                 >
                     Add Patient
                 </button>

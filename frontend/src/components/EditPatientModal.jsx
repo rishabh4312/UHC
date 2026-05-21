@@ -89,11 +89,11 @@ export default function EditPatientModal({
 
     return (
 
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4">
 
-            <div className="bg-white p-6 rounded-xl w-[500px]">
+            <div className="bg-white p-6 rounded-3xl w-full max-w-xl shadow-xl border border-slate-200">
 
-                <h2 className="text-xl font-bold mb-4">
+                <h2 className="text-2xl font-semibold mb-5 text-slate-800">
                     Edit Patient
                 </h2>
 
@@ -101,14 +101,14 @@ export default function EditPatientModal({
 
                 <form
                     onSubmit={handleSubmit}
-                    className="space-y-3"
+                    className="space-y-4"
                 >
 
                     <input
                         name="first_name"
                         value={formData.first_name}
                         onChange={handleChange}
-                        className="w-full border p-2 rounded"
+                        className="mt-2 w-full border border-slate-300 px-3 py-2 rounded-2xl bg-slate-50 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
                         placeholder="First Name"
                     />
 
@@ -148,7 +148,7 @@ export default function EditPatientModal({
                         name="gender"
                         value={formData.gender}
                         onChange={handleChange}
-                        className="w-full border p-2 rounded"
+                        className="mt-2 w-full border border-slate-300 px-3 py-2 rounded-2xl bg-slate-50 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
                     >
 
                         <option value="">
@@ -171,7 +171,7 @@ export default function EditPatientModal({
                         name="address"
                         value={formData.address}
                         onChange={handleChange}
-                        className="w-full border p-2 rounded"
+                        className="mt-2 w-full border border-slate-300 px-3 py-2 rounded-2xl bg-slate-50 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
                         placeholder="Address"
                     />
 
@@ -197,10 +197,10 @@ export default function EditPatientModal({
 
 
 
-                    <div className="flex gap-2">
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
 
                         <button
-                            className="bg-green-600 text-white px-4 py-2 rounded"
+                            className="flex-1 bg-emerald-600 text-white px-4 py-3 rounded-2xl text-sm font-semibold shadow-lg hover:bg-emerald-700 transition duration-300"
                         >
                             Update
                         </button>
@@ -210,7 +210,7 @@ export default function EditPatientModal({
                         <button
                             type="button"
                             onClick={onClose}
-                            className="bg-red-500 text-white px-4 py-2 rounded"
+                            className="flex-1 bg-slate-200 text-slate-800 px-4 py-3 rounded-2xl text-sm font-semibold hover:bg-slate-300 transition duration-300"
                         >
                             Close
                         </button>

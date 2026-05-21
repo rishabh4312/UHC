@@ -114,7 +114,71 @@ const getPrescriptionsByVisit = (req, res) => {
 
 
 
+const uploadLabReport = (req, res) => {
+
+    try {
+
+        const {
+            patient_id,
+            visit_id
+        } = req.body;
+
+        if (!req.file) {
+
+            return res.status(400).json({
+                success: false,
+                message: "No lab report uploaded"
+            });
+        }
+
+        const imagePath = req.file.path;
+
+        const sql = `
+            UPDATE opd_visits
+            SET lab_report = ?
+            WHERE id = ?
+        `;
+
+        db.run(
+            sql,
+            [
+                imagePath,
+                visit_id
+            ],
+            function(err) {
+
+                if (err) {
+
+                    console.log(err.message);
+
+                    return res.status(500).json({
+                        success: false,
+                        message: "Database error"
+                    });
+                }
+
+                res.status(200).json({
+                    success: true,
+                    message: "Lab report uploaded successfully",
+                    image_path: imagePath
+                });
+            }
+        );
+
+    } catch (error) {
+
+        console.log(error);
+
+        res.status(500).json({
+            success: false,
+            message: "Server error"
+        });
+    }
+};
+
+
 module.exports = {
     uploadPrescription,
+    uploadLabReport,
     getPrescriptionsByVisit
 };
